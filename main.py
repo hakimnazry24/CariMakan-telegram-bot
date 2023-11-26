@@ -3,7 +3,7 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import dbhelper
 
-TOKEN: Final = '6761327577:AAExXDcodT3fErraIKVnjvsJpqfnyVttG6A'
+TOKEN: Final = '__REDACTED__'
 BOT_USERNAME: Final = '@order_food_kict_bot'
 DELIVERY_FEE: Final = 1
 
@@ -159,8 +159,12 @@ def main():
     app.add_error_handler(error)
 
     #Polls the bot
+
     print('Polling for user bot...')
     app.run_polling(poll_interval=3)
 
 
 main()
+
+
+
