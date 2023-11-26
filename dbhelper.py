@@ -5,12 +5,12 @@ cur = con.cursor()
 
 #initializing tables
 try:
-    cur.execute("CREATE TABLE food(food_id INTEGER PRIMARY KEY AUTOINCREMENT, food_name TEXT, price REAL, cafe_location TEXT)")
+    cur.execute("CREATE TABLE food(food_id INTEGER PRIMARY KEY, food_name TEXT, price REAL, cafe_location TEXT)")
 except(sqlite3.OperationalError):
     print("DATABASE: Table food is already created")
 
 try:
-    cur.execute("CREATE TABLE customer_order(order_id INTEGER PRIMARY KEY AUTOINCREMENT, food_id, total_price FLOAT, FOREIGN KEY(food_id) REFERENCES food(food_id))")
+    cur.execute("CREATE TABLE customer_order(order_id INTEGER PRIMARY KEY, food_id, total_price FLOAT, FOREIGN KEY(food_id) REFERENCES food(food_id))")
 except(sqlite3.OperationalError):
     print("DATABASE: Table customer_order is already created")
 
@@ -19,38 +19,8 @@ try:
 except:
     print("DATABASE: Table chosen_mahallah has been created")
 
-try:
-    cur.execute("CREATE TEMPORARY VIEW faruq_food AS SELECT * FROM food WHERE cafe_mahallah = 'faruq'")
-except:
-    print("DATABASE: View faruq_food is already created")
-
-try:
-    cur.execute("CREATE TEMPORARY VIEW faruq_food AS SELECT * FROM food WHERE cafe_mahallah = 'uthman'")
-except:
-    print("DATABASE: View uthman_food is already created")
-
-try:
-    cur.execute("CREATE TEMPORARY VIEW faruq_food AS SELECT * FROM food WHERE cafe_mahallah = 'siddiq'")
-except:
-    print("DATABASE: View siddiq_food is already created")
-
-try:
-    cur.execute("CREATE TEMPORARY VIEW faruq_food AS SELECT * FROM food WHERE cafe_mahallah = 'ali'")
-except:
-    print("DATABASE: view ali_food is already created")
-
-try:
-    cur.execute("CREATE TEMPORARY VIEW faruq_food AS SELECT * FROM food WHERE cafe_mahallah = 'bilal'")
-except:
-    print("DATABASE: view bilal_food is already created")
-
-try:
-    cur.execute("CREATE TEMPORARY VIEW faruq_food AS SELECT * FROM food WHERE cafe_mahallah = 'zubair'")
-except:
-    print("DATABASE: view zubair_food is already created")
-
 def add_row(table, data):
-    query = f'INSERT INTO {table} VALUES(?, ?, ?, ?)'
+    query = f'INSERT INTO {table} VALUES(NULL, ?, ?, ?)'
     cur.executemany(query, (data,))
     con.commit()
     print(f"DATABASE: New row has been added at table {table} {data}")

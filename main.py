@@ -10,6 +10,8 @@ DELIVERY_FEE: Final = 1
 orders = []
 chosen_mahallah = dbhelper.read_table('chosen_mahallah')
 chosen_mahallah = chosen_mahallah[0][0]
+food_options = []
+food_options_id = []
 
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -29,12 +31,17 @@ async def show_menu_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     global food_options
     food_options = dbhelper.read_mahallah_food(chosen_mahallah)
+
+    #get all food id
+    for food in food_options:
+        food_options_id.append(food[0])
+
     mahallah = chosen_mahallah
     mahallah.capitalize()
     try:
         await update.message.reply_text(f"Today's menu is coming from Mahallah {mahallah}. Here are the menu for today!")
-        for (i, food) in enumerate(food_options):
-            await update.message.reply_text(f'{i}. {food[1]} -> RM{food[2]}')
+        for food in food_options:
+            await update.message.reply_text(f'{food[0]}. {food[1]} -> RM{food[2]}')
 
         await update.message.reply_text("Send /order to start ordering your food.\n\nFormat of order: /order(food_id) (amount)\nExample: /order 1 1")
     except:
@@ -43,12 +50,13 @@ async def show_menu_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def order_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
     processed = update.message.text.replace('/order', '')
-    order = processed.split()
-    food_id = int(order[0])
+    food_id, amount = processed.split()
+    food_id = int(food_id)
+    amount = int(amount)
+    order = {"food_id":food_id, "amount":amount}
 
-    if food_id >= len(food_options):
-        print(f"error: User {user_id} is ordering non-existing food")
-        await update.message.reply_text('You are ordering food that is not in the menu!.\n\nSend /menu to get menu')
+    if food_id not in food_options_id:
+        await update.message.reply_text("You are ordering food that is not available in our list")
         return 0
 
     orders.append(order)
@@ -58,34 +66,47 @@ async def order_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f'If you wish to add more item, send /order (id) (amount) again.\nIf you wish to close your order. send /close_order')
 
 async def close_order_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.message.from_user.id
+
     if not orders:
         await update.message.reply_text("You do not have any order yet..")
         return 0
-
-    #buat logic untuk close order, calculate total price
-    #
-    # 
-    # 
-    # 
     
+    #buat logic untuk close order, calculate total price
+    total_price = 0
+    total_delivery_fee = 0
+    total_food_price = 0
+
+    for order in orders:
+        food_id = order["food_id"]
+        amount = order["amount"]
+
+        #return food_options that has same food_id as ordered food
+        for x in food_options:
+            food_option = x if int(x[0]) == food_id else None
+
+        food_price = food_option[2]
+        total_food_price = amount * food_price
+        total_delivery_fee = amount * DELIVERY_FEE
+        total_price += total_food_price + total_delivery_fee
+
+    print(f"Closing order for User {user_id}. RM{total_price}")
+    await update.message.reply_text(f"Total is RM{total_price}. RM{total_food_price} for total food price and RM{total_delivery_fee} for delivery fee.")
     #NEED TO INCLUDE PAYMENT METHOD HERE
-    #AFTER PAYMENT HAS BEEN VERIFIED, NEED TO UPDATE DATABASE, CURRENTLY ORDER IS ONLY STORED LOCALLY IN ORDER ARRAY
+    #AFTER PAYMENT HAS BEEN VERIFIED, NEED TO UPDATE ORDERS CACHE INTO DATABASE
 
 async def view_order_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("Displaying all orders...")
+    user_id = update.message.from_user.id
+    print(f"Displaying all orders for User {user_id}")
+
     if not orders:
         await update.message.reply_text("There is no order yet..")
         return 0
     
-    view_order_text = ''
+    await update.message.reply_text('Your order:\n')
     for order in orders:
-        food_id = int(order[0])
-        amount = order[1]
-        food_name = food_options[food_id][1]
-        view_order_text += food_name + ' Amount: ' + amount + '\n'
-    await update.message.reply_text(f'{view_order_text}')
-
-
+        await update.message.reply_text(f"{order}\n")
+        
 async def reset_order_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
     print(f'Resetting order for User {user_id}')
@@ -93,7 +114,6 @@ async def reset_order_command(update: Update, context: ContextTypes.DEFAULT_TYPE
     await update.message.reply_text("Your order has been reset")
 
 
-            
 #Responses 
 def handle_response(text: str) -> str:
     if 'hello' in text:
